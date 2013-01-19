@@ -54,6 +54,7 @@ module Xtree
     def initialize(n, s)
       @filename = n
       @stats = s
+			create_proxy_methods
     end
 
     class << self
@@ -81,6 +82,25 @@ module Xtree
         related_class.new(filename, s)
       end
 
+    end
+
+    STAT_METHODS_TO_BE_PROXIED = %w(
+      <=> atime mtime ctime blksize size blockdev? blocks chardev?
+      dev dev_major dev_minor directory? executable? executable_real?
+      file? ftype gid grpowned? mode nlink owned? pipe? rdev
+      rdev_major rdev_minor readable? readable_real? setgid? setuid?
+      socket? sticky? symlink? uid world_readable? world_writable?
+      writable? writable_real? zero?
+    )
+
+  private
+
+    def create_proxy_methods
+      STAT_METHODS_TO_BE_PROXIED.each do
+        |meth|
+        meth_symbol = meth.intern
+        self.class.send(:define_method, meth_symbol) { ::File.lstat(self.filename).send(meth_symbol) } unless self.respond_to?(meth_symbol)
+      end
     end
 
   end

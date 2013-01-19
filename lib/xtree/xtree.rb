@@ -27,11 +27,12 @@ module Xtree
     class << self
 
       def recurse_from_here(dir)
+				result = []
         Dir.chdir(dir) do
           Dir.glob('*').each do
             |filename|
-              result = Xtree::File.parse(filename)
-              result = recurse_from_here(filename) if result.is_a?(XTree::Directory)
+              result = DirEntry.parse(filename)
+              result = recurse_from_here(filename) if result.is_a?(Directory)
           end
         end
         result

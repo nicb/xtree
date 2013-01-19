@@ -18,7 +18,7 @@ module Xtree
         opts.banner = <<-BANNER.gsub(/^          /,'')
           This application is wonderful because...
 
-          Usage: #{File.basename($0)} [options] <path>
+          Usage: #{::File.basename($0)} [options] <path>
 
           Options are:
         BANNER
