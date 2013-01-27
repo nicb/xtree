@@ -1,41 +1,55 @@
 #
 # $Id$
 #
-require 'rexml/element'
+require 'rexml/document'
 
 module Xtree
 
-	class Archive < REXML::Element
+	class Archive < REXML::Document
 
 		attr_reader :created_at, :root_directory, :archive_name
 
     public_class_method :new
 
-		def initialize(n, r, ca = Time.now.to_s)
-			@archive_name = n
-			@root_directory = r
-			@created_at = ca
-			super('archive')
-			initialize_tree!
-			self.add_namespace(XTREE_NAMESPACE)
-		end
-
 		#
-		# <tt>propagate_tree!</tt> is not done automatically for the +Archive+
-		# class, to avoid unwanted side-effects. Thus, this method must be called
-		# explicitely
+		# <tt>Xtree::Archive.new(args*)</tt> creates a new archive.
 		#
-		def propagate_tree!
-			doc = REXML::Document.new(self.archive_name)
-			doc << REXML::Document::DECLARATION
-			doc.add_element(self)
-			doc
+		# If the argument is *only* an @xml@ string, the string is passed directly
+		# to the <tt>REXML::Document</tt> parent object (this is like cloning
+		# via the @xml@ description).
+		#
+		# If there are two or three arguments then the object is created. The
+		# arguments are taken to be:
+		#
+		# * the name of the archive
+		# * the root directory
+		# * the time of creation (optional - default: Time.now)
+		#
+		def initialize(*args)
+			res = nil
+			argc = args.size
+			if argc == 1 && args.first.class == String
+				super(args.first)
+			elsif argc > 1
+				(arcname, rdir, ca) = args
+				ca = Time.now.to_s unless ca
+				@archive_name = arcname
+				@root_directory = rdir
+				@created_at = ca
+				super('archive')
+				initialize_tree!
+			else
+				raise(ArgumentError, "Wrong arguments (#{args.inspect}) to #{self.class.name}")
+			end
+			self
 		end
 
 	private
 
 		def initialize_tree!
-			self.add_attribute('name', self.archive_name)
+			self << REXML::Document::DECLARATION
+			self.add_namespace(XTREE_NAMESPACE)
+			self.add_text(self.root_directory)
 			self.add_attribute('created_at', self.created_at)
 			tree = Entry.new(self.root_directory)
 			self.add_element(tree)

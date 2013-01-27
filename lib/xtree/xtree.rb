@@ -25,8 +25,7 @@ module Xtree
     def generate
 			res = nil
       raise(NotADirectory, "[error opening dir #{self.start_path}]") unless ::File.directory?(self.start_path)
-			root = Archive.new(self.archive, self.start_path)
-			root.propagate_tree!
+			Archive.new(self.archive, self.start_path)
     end
 
   end

@@ -37,6 +37,7 @@ class TestXtreeEntry < Test::Unit::TestCase
       assert bde = File.basename(dir_entry)
       assert ftype = @test_tree[bde], "Directory entry: #{dir_entry}"
       assert xtde = Xtree::Entry.new(dir_entry)
+			assert_equal Xtree::Entry, xtde.class
       assert_equal ftype, xtde.ftype, "File: #{dir_entry}"
     end
     @other_tests.each do

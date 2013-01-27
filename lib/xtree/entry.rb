@@ -18,7 +18,7 @@ module Xtree
 			create_proxy_methods
 			super(self.stats.ftype)
 			self.add_namespace(XTREE_NAMESPACE)
-			self.add_attribute('filename', self.filename)
+			self.add_text(self.filename)
 			add_properties
 			propagate_tree!
     end
