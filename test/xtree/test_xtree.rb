@@ -1,13 +1,13 @@
 #
 # $Id$
 #
-require File.dirname(__FILE__) + '/test_helper.rb'
+require File.join(File.dirname(__FILE__), '..', 'test_helper.rb')
 
 require 'rexml/document'
 
 class TestXtreeXtree < Test::Unit::TestCase
 
-  XTREE_TEST_TREE_PATH = File.join(File.dirname(__FILE__), 'fixtures', 'test_tree')
+  XTREE_TEST_TREE_PATH = File.join(File.dirname(__FILE__), '..', 'fixtures', 'test_tree')
 
   def setup
     assert @default_path = '.'

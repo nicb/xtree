@@ -1,10 +1,12 @@
 #
 # $Id$
 #
-require File.dirname(__FILE__) + '/test_helper.rb'
+require File.join(File.dirname(__FILE__), '..', 'test_helper.rb')
 require 'socket'
 
-class TestXtreeDirEntry < Test::Unit::TestCase
+class TestXtreeEntry < Test::Unit::TestCase
+
+	XTREE_TEST_TREE_PATH = File.join(File.dirname(__FILE__), '..', 'fixtures', 'test_tree')
 
   def setup
     assert @sock_name = 'a_socket'

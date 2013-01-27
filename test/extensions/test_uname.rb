@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-require File.dirname(__FILE__) + '/test_helper.rb'
+require File.join(File.dirname(__FILE__), '..', 'test_helper.rb')
 
 class TestUname < Test::Unit::TestCase
 
