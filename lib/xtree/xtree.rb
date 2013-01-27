@@ -1,16 +1,18 @@
 #
 # $Id$
 #
+
+require 'rexml/document'
+
 module Xtree
 
   class Xtree
 
-    attr_reader :start_path, :archive
+    attr_reader :start_path, :archive, :tab
 
     def initialize(sp = '.', a = nil)
       @start_path = sp
       @archive = (a || Uname.node)
-      @tree = nil
     end
 
     def ===(other)
@@ -18,26 +20,13 @@ module Xtree
       (self.start_path == other.start_path) && (self.archive == other.archive)
     end
 
+    class NotADirectory < RuntimeError; end
+
     def generate
-      @tree = self.class.recurse_from_here(self.start_path)
-    end
-
-  private
-
-    class << self
-
-      def recurse_from_here(dir)
-				result = []
-        Dir.chdir(dir) do
-          Dir.glob('*').each do
-            |filename|
-              result = DirEntry.parse(filename)
-              result = recurse_from_here(filename) if result.is_a?(Directory)
-          end
-        end
-        result
-      end
-
+			res = nil
+      raise(NotADirectory, "[error opening dir #{self.start_path}]") unless ::File.directory?(self.start_path)
+			root = Archive.new(self.archive, self.start_path)
+			root.propagate_tree!
     end
 
   end

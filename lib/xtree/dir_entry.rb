@@ -1,97 +1,40 @@
 #
 # $Id$
 #
+require 'rexml/element'
+
 module Xtree
 
-  #
-  # this is required to get the proper hierarchy, please see below for the
-  # +Xtree::DirEntry+ class implementation
-  #
-  
-  class DirEntry
-  end
-
-  class Directory < DirEntry
-    public_class_method :new
-  end
-
-  class File < DirEntry
-    public_class_method :new
-  end
-
-  class CharacterSpecial < DirEntry
-    public_class_method :new
-  end
-
-  class BlockSpecial < DirEntry
-    public_class_method :new
-  end
-
-  class Fifo < DirEntry
-    public_class_method :new
-  end
-
-  class SymLink < DirEntry
-    public_class_method :new
-  end
-
-  class Socket < DirEntry
-    public_class_method :new
-  end
+	XTREE_NAMESPACE = 'xtree'
 
   #
-  # +Xtree::DirEntry+ is the base class
+  # +Xtree::Entry+ is the core class
   #
-  # it should not be created directly, the +parse+ method should be used
-  # instead
-  #
-  class DirEntry
+  class Entry < REXML::Element
 
     attr_reader :filename, :stats
 
-    private_class_method :new
-
-    def initialize(n, s)
+    def initialize(n)
       @filename = n
-      @stats = s
+      @stats = ::File.lstat(self.filename)
 			create_proxy_methods
+			super(self.stats.ftype)
+			self.add_namespace(XTREE_NAMESPACE)
+			self.add_attribute('filename', self.filename)
+			add_properties
+			propagate_tree!
     end
 
-    class << self
-
-      #
-      # +parse(filename)+ generates the appropriate Xtree::File class
-      # (+Xtree::Directory+, +Xtree::File+, +Xtree::SymLink+, etc.) according
-      # to the stats of the filename passed as argument
-      #
-
-      CLASSES = {
-        'directory' => Xtree::Directory,
-        'file'      => File,
-        'characterSpecial' => CharacterSpecial,
-        'blockSpecial' => BlockSpecial,
-        'fifo' => Fifo,
-        'socket' => Socket,
-        'symlink' => SymLink,
-      }
-
-      def parse(filename)
-        s = ::File.lstat(filename)
-        t = s.symlink? ? 'symlink' : s.ftype
-        related_class = CLASSES[t]
-        related_class.new(filename, s)
-      end
-
-    end
-
-    STAT_METHODS_TO_BE_PROXIED = %w(
-      <=> atime mtime ctime blksize size blockdev? blocks chardev?
+		PROPERTIES = %w(
+      atime mtime ctime blksize size blockdev? blocks chardev?
       dev dev_major dev_minor directory? executable? executable_real?
       file? ftype gid grpowned? mode nlink owned? pipe? rdev
       rdev_major rdev_minor readable? readable_real? setgid? setuid?
       socket? sticky? symlink? uid world_readable? world_writable?
       writable? writable_real? zero?
-    )
+		)
+
+    STAT_METHODS_TO_BE_PROXIED = [ '<=>', PROPERTIES ].flatten
 
   private
 
@@ -99,10 +42,74 @@ module Xtree
       STAT_METHODS_TO_BE_PROXIED.each do
         |meth|
         meth_symbol = meth.intern
-        self.class.send(:define_method, meth_symbol) { ::File.lstat(self.filename).send(meth_symbol) } unless self.respond_to?(meth_symbol)
+        self.class.send(:define_method, meth_symbol) { self.stats.send(meth_symbol) } unless self.respond_to?(meth_symbol)
       end
     end
 
+		def add_properties
+			PROPERTIES.each do
+				|p|
+				value = self.send(p)
+				value = value ? 'yes' : 'no' if p =~ /\?\Z/
+				self.add_attribute(p.to_valid_xml_attribute_name, value)
+			end
+		end
+
+		#
+		# <tt>propagate_tree!</tt> is the actual method that does all the children xml
+		# generation work.
+		#
+		def propagate_tree!
+			if self.ftype == 'directory'
+				Dir.chdir(self.filename) do
+					Dir.glob('*').each do
+						|f|
+						el = Entry.new(f)
+						self.add_element(el)
+					end
+				end
+			end
+		end
+
   end
+
+	class Archive < REXML::Element
+
+		attr_reader :created_at, :root_directory, :archive_name
+
+    public_class_method :new
+
+		def initialize(n, r, ca = Time.now.to_s)
+			@archive_name = n
+			@root_directory = r
+			@created_at = ca
+			super('archive')
+			initialize_tree!
+			self.add_namespace(XTREE_NAMESPACE)
+		end
+
+		#
+		# <tt>propagate_tree!</tt> is not done automatically for the +Archive+
+		# class, to avoid unwanted side-effects. Thus, this method must be called
+		# explicitely
+		#
+		def propagate_tree!
+			doc = REXML::Document.new(self.archive_name)
+			doc << REXML::Document::DECLARATION
+			doc.add_element(self)
+			doc
+		end
+
+	private
+
+		def initialize_tree!
+			self.add_attribute('name', self.archive_name)
+			self.add_attribute('created_at', self.created_at)
+			tree = Entry.new(self.root_directory)
+			self.add_element(tree)
+			self
+		end
+
+	end
 
 end

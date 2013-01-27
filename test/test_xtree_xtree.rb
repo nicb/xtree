@@ -3,7 +3,11 @@
 #
 require File.dirname(__FILE__) + '/test_helper.rb'
 
+require 'rexml/document'
+
 class TestXtreeXtree < Test::Unit::TestCase
+
+  XTREE_TEST_TREE_PATH = File.join(File.dirname(__FILE__), 'fixtures', 'test_tree')
 
   def setup
     assert @default_path = '.'
@@ -19,9 +23,19 @@ class TestXtreeXtree < Test::Unit::TestCase
     assert xt1 === xt2
   end
 
-  def test_run
-    assert xt = Xtree::Xtree.new
+  def test_generation
+    assert xt = Xtree::Xtree.new(XTREE_TEST_TREE_PATH, 'test archive')
     assert output = xt.generate
+    assert resulting_tree = REXML::Document.new(output.to_s)
+		assert_equal REXML::Document, resulting_tree.class
+    resulting_tree.elements.each('archive') do
+      |el|
+      assert_equal Xtree::Archive, el.class
+      el.elements.each do
+        |elel|
+        assert_equal Xtree::Entry, elel.class
+      end
+    end
   end
 
 end
