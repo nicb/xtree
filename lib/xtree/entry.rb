@@ -28,8 +28,7 @@ module Xtree
       dev dev_major dev_minor directory? executable? executable_real?
       file? ftype gid grpowned? mode nlink owned? pipe? rdev
       rdev_major rdev_minor readable? readable_real? setgid? setuid?
-      socket? sticky? symlink? uid world_readable? world_writable?
-      writable? writable_real? zero?
+      socket? sticky? symlink? uid writable? writable_real? zero?
 		)
 
     STAT_METHODS_TO_BE_PROXIED = [ '<=>', PROPERTIES ].flatten
